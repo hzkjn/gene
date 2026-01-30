@@ -1,0 +1,21 @@
+{
+  "name": "@hzkjn/gene",
+  "version": "0.1.0",
+  "description": "HZKJN app generator",
+  "type": "module",
+  "bin": {
+    "gene": "./bin/index.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "scripts": {
+    "build": "bun build src/index.ts --outdir bin --target node",
+    "prepublishOnly": "bun run build"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "license": "MIT"
+}
