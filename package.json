@@ -1,10 +1,10 @@
 {
-  "name": "@hzkjn/gene",
+  "name": "@hzkjn/create-gene",
   "version": "0.1.0",
   "description": "HZKJN app generator",
   "type": "module",
   "bin": {
-    "gene": "./bin/index.js"
+    "create-gene": "./bin/index.js"
   },
   "files": [
     "bin"
