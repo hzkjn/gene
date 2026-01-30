@@ -4,7 +4,7 @@
   "description": "HZKJN app generator",
   "type": "module",
   "bin": {
-    "create-gene": "./bin/index.js"
+    "gene": "./bin/index.js"
   },
   "files": [
     "bin"
