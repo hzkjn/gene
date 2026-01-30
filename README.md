@@ -7,12 +7,17 @@ CLI scaffolder for HZKJN apps.
 ```bash
 bunx @hzkjn/create-gene my-app
 ```
+or
+```bash
+bun create @hzkjn/gene my-app
+```
+
 ## Development
 
 ```bash
 cd my-app
 bun install
-bun run build
+bun run dev
 ```
 
 ## License
