@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # test artifacts
 test-temp
+
+# agents
+.claude/scratchpad
