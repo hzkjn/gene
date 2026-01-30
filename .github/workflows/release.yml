@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # REQUIRED for OIDC
+  id-token: write # REQUIRED for OIDC
 
 jobs:
   publish:
@@ -20,11 +20,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
 
       - name: Install deps
         run: bun install
