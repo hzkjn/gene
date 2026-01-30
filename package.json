@@ -9,6 +9,10 @@
   "files": [
     "bin"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hzkjn/gene.git"
+  },
   "scripts": {
     "build": "bun build src/index.ts --outdir bin --target node",
     "prepublishOnly": "bun run build"
