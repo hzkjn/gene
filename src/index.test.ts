@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { templates } from "./templates";
 
@@ -84,6 +84,27 @@ describe("Gene CLI", () => {
     const { exitCode, stderr } = await runCLI([appName, "-t", template]);
     expect(exitCode).toBe(1);
     expect(stderr).toContain("Unknown template");
+  });
+
+  test("should replace {{appName}} in package.json", async () => {
+    const appName = "placeholder-test-app";
+    const appDir = path.join(testDir, appName);
+    mkdirSync(appDir, { recursive: true });
+
+    // Create a fake package.json with placeholder
+    writeFileSync(
+      path.join(appDir, "package.json"),
+      JSON.stringify({ name: "{{appName}}", description: "A {{appName}} project" })
+    );
+
+    // Simulate the replacement logic from index.ts
+    const pkgPath = path.join(appDir, "package.json");
+    const pkg = readFileSync(pkgPath, "utf-8");
+    writeFileSync(pkgPath, pkg.replaceAll("{{appName}}", appName));
+
+    const result = JSON.parse(readFileSync(pkgPath, "utf-8"));
+    expect(result.name).toBe(appName);
+    expect(result.description).toBe(`A ${appName} project`);
   });
 
   test("should have correct template options", () => {

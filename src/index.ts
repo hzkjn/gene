@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
 import {
@@ -89,6 +89,13 @@ async function main() {
   );
 
   execSync(`rm -rf ${appName}/.gene-core`, { stdio: "inherit" });
+
+  // Replace {{appName}} placeholder in package.json
+  const pkgPath = path.join(targetDir, "package.json");
+  if (existsSync(pkgPath)) {
+    const pkg = readFileSync(pkgPath, "utf-8");
+    writeFileSync(pkgPath, pkg.replaceAll("{{appName}}", appName));
+  }
 
   execSync(`cd ${appName} && git init`, { stdio: "inherit" });
 

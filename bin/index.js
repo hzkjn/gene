@@ -147,7 +147,8 @@ var require_src = __commonJS((exports, module) => {
 
 // src/index.ts
 var import_picocolors3 = __toESM(require_picocolors(), 1);
-import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 // node_modules/@clack/core/dist/index.mjs
@@ -649,6 +650,27 @@ class Wt extends x {
     });
   }
 }
+class $t extends x {
+  get userInputWithCursor() {
+    if (this.state === "submit")
+      return this.userInput;
+    const e = this.userInput;
+    if (this.cursor >= e.length)
+      return `${this.userInput}█`;
+    const s = e.slice(0, this.cursor), [i, ...r] = e.slice(this.cursor);
+    return `${s}${import_picocolors.default.inverse(i)}${r.join("")}`;
+  }
+  get cursor() {
+    return this._cursor;
+  }
+  constructor(e) {
+    super({ ...e, initialUserInput: e.initialUserInput ?? e.initialValue }), this.on("userInput", (s) => {
+      this._setValue(s);
+    }), this.on("finalize", () => {
+      this.value || (this.value = e.defaultValue), this.value === undefined && (this.value = "");
+    });
+  }
+}
 
 // node_modules/@clack/prompts/dist/index.mjs
 var import_picocolors2 = __toESM(require_picocolors(), 1);
@@ -988,6 +1010,35 @@ ${import_picocolors2.default.cyan(x2)}
   } }).prompt();
 };
 var ze = `${import_picocolors2.default.gray(h)}  `;
+var Qt = (e) => new $t({ validate: e.validate, placeholder: e.placeholder, defaultValue: e.defaultValue, initialValue: e.initialValue, output: e.output, signal: e.signal, input: e.input, render() {
+  const r = (e?.withGuide ?? _.withGuide) !== false, s = `${`${r ? `${import_picocolors2.default.gray(h)}
+` : ""}${N2(this.state)}  `}${e.message}
+`, i = e.placeholder ? import_picocolors2.default.inverse(e.placeholder[0]) + import_picocolors2.default.dim(e.placeholder.slice(1)) : import_picocolors2.default.inverse(import_picocolors2.default.hidden("_")), n = this.userInput ? this.userInputWithCursor : i, o = this.value ?? "";
+  switch (this.state) {
+    case "error": {
+      const u = this.error ? `  ${import_picocolors2.default.yellow(this.error)}` : "", l = r ? `${import_picocolors2.default.yellow(h)}  ` : "", a = r ? import_picocolors2.default.yellow(x2) : "";
+      return `${s.trim()}
+${l}${n}
+${a}${u}
+`;
+    }
+    case "submit": {
+      const u = o ? `  ${import_picocolors2.default.dim(o)}` : "", l = r ? import_picocolors2.default.gray(h) : "";
+      return `${s}${l}${u}`;
+    }
+    case "cancel": {
+      const u = o ? `  ${import_picocolors2.default.strikethrough(import_picocolors2.default.dim(o))}` : "", l = r ? import_picocolors2.default.gray(h) : "";
+      return `${s}${l}${u}${o.trim() ? `
+${l}` : ""}`;
+    }
+    default: {
+      const u = r ? `${import_picocolors2.default.cyan(h)}  ` : "", l = r ? import_picocolors2.default.cyan(x2) : "";
+      return `${s}${u}${n}
+${l}
+`;
+    }
+  }
+} }).prompt();
 
 // src/templates.ts
 var templates = [
@@ -1011,11 +1062,6 @@ var templates = [
 
 // src/index.ts
 var args = process.argv.slice(2);
-var appName = args[0];
-if (!appName) {
-  console.error(import_picocolors3.default.red("❌ Please provide an app name"));
-  process.exit(1);
-}
 var templateArg = (() => {
   const long = args.find((a) => a.startsWith("--template="));
   if (long)
@@ -1026,8 +1072,27 @@ var templateArg = (() => {
   }
   return;
 })();
+var appName = args.find((arg) => !arg.startsWith("-") && arg !== templateArg);
 async function main() {
   Nt(import_picocolors3.default.green("\uD83C\uDF31 Gene App Generator"));
+  if (!appName) {
+    const nameInput = await Qt({
+      message: "What is the name of your app?",
+      placeholder: "my-app",
+      validate: (value) => {
+        if (!value)
+          return "App name is required";
+        if (!/^[a-z0-9-]+$/.test(value)) {
+          return "App name must be lowercase alphanumeric with dashes";
+        }
+      }
+    });
+    if (Ct(nameInput)) {
+      Pt("Operation cancelled.");
+      process.exit(0);
+    }
+    appName = nameInput;
+  }
   const template = templateArg ?? await qt({
     message: "Select the type of app to create:",
     options: templates
@@ -1048,26 +1113,17 @@ async function main() {
   console.log(import_picocolors3.default.cyan(`
 Creating ${appName} using "${template}" template...
 `));
-  await Bun.spawn(["git", "clone", "https://github.com/hzkjn/gene-core.git", `${appName}/.gene-core`], {
-    cwd: process.cwd(),
-    stdout: "inherit",
-    stderr: "inherit"
-  }).exited;
-  await Bun.spawn(["cp", "-R", `${appName}/.gene-core/templates/${template}/.`, appName], {
-    cwd: process.cwd(),
-    stdout: "inherit",
-    stderr: "inherit"
-  }).exited;
-  await Bun.spawn(["rm", "-rf", `${appName}/.gene-core`], {
-    cwd: process.cwd(),
-    stdout: "inherit",
-    stderr: "inherit"
-  }).exited;
-  await Bun.spawn(["git", "init"], {
-    cwd: path.join(process.cwd(), appName),
-    stdout: "inherit",
-    stderr: "inherit"
-  }).exited;
+  execSync(`git clone https://github.com/hzkjn/gene-core.git ${appName}/.gene-core`, {
+    stdio: "inherit"
+  });
+  execSync(`cp -R ${appName}/.gene-core/templates/${template}/. ${appName}`, { stdio: "inherit" });
+  execSync(`rm -rf ${appName}/.gene-core`, { stdio: "inherit" });
+  const pkgPath = path.join(targetDir, "package.json");
+  if (existsSync(pkgPath)) {
+    const pkg = readFileSync(pkgPath, "utf-8");
+    writeFileSync(pkgPath, pkg.replaceAll("{{appName}}", appName));
+  }
+  execSync(`cd ${appName} && git init`, { stdio: "inherit" });
   Wt2(import_picocolors3.default.green("✅ App created successfully!"));
   console.log(`
 Next steps:
