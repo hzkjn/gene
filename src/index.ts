@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
@@ -6,18 +7,13 @@ import {
   intro,
   outro,
   select,
+  text,
   cancel,
   isCancel,
 } from "@clack/prompts";
 import { templates } from "./templates";
 
 const args = process.argv.slice(2);
-const appName = args[0];
-
-if (!appName) {
-  console.error(pc.red("❌ Please provide an app name"));
-  process.exit(1);
-}
 
 const templateArg = (() => {
   const long = args.find(a => a.startsWith("--template="));
@@ -31,8 +27,31 @@ const templateArg = (() => {
   return undefined;
 })();
 
+// Get app name from args, excluding flags
+let appName = args.find(arg => !arg.startsWith("-") && arg !== templateArg);
+
 async function main() {
   intro(pc.green("🌱 Gene App Generator"));
+
+  if (!appName) {
+    const nameInput = await text({
+      message: "What is the name of your app?",
+      placeholder: "my-app",
+      validate: (value) => {
+        if (!value) return "App name is required";
+        if (!/^[a-z0-9-]+$/.test(value)) {
+          return "App name must be lowercase alphanumeric with dashes";
+        }
+      },
+    });
+
+    if (isCancel(nameInput)) {
+      cancel("Operation cancelled.");
+      process.exit(0);
+    }
+
+    appName = nameInput as string;
+  }
 
   const template =
     templateArg ??
@@ -51,7 +70,7 @@ async function main() {
     process.exit(1);
   }
 
-  const targetDir = path.resolve(process.cwd(), appName!);
+  const targetDir = path.resolve(process.cwd(), appName);
 
   if (existsSync(targetDir)) {
     console.error(pc.red(`❌ Directory "${appName}" already exists`));
@@ -60,29 +79,18 @@ async function main() {
 
   console.log(pc.cyan(`\nCreating ${appName} using "${template}" template...\n`));
 
-  await Bun.spawn(["git", "clone", "https://github.com/hzkjn/gene-core.git", `${appName}/.gene-core`], {
-    cwd: process.cwd(),
-    stdout: "inherit",
-    stderr: "inherit",
-  }).exited;
+  execSync(`git clone https://github.com/hzkjn/gene-core.git ${appName}/.gene-core`, {
+    stdio: "inherit",
+  });
 
-  await Bun.spawn(["cp", "-R", `${appName}/.gene-core/templates/${template as string}/.`, appName!], {
-    cwd: process.cwd(),
-    stdout: "inherit",
-    stderr: "inherit",
-  }).exited;
+  execSync(
+    `cp -R ${appName}/.gene-core/templates/${template as string}/. ${appName}`,
+    { stdio: "inherit" }
+  );
 
-  await Bun.spawn(["rm", "-rf", `${appName}/.gene-core`], {
-    cwd: process.cwd(),
-    stdout: "inherit",
-    stderr: "inherit",
-  }).exited;
+  execSync(`rm -rf ${appName}/.gene-core`, { stdio: "inherit" });
 
-  await Bun.spawn(["git", "init"], {
-    cwd: path.join(process.cwd(), appName!),
-    stdout: "inherit",
-    stderr: "inherit",
-  }).exited;
+  execSync(`cd ${appName} && git init`, { stdio: "inherit" });
 
   outro(pc.green("✅ App created successfully!"));
 

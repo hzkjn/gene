@@ -11,6 +11,16 @@ Gene helps you quickly scaffold different types of applications (web, SaaS, mobi
 
 ## Usage
 
+### Interactive mode
+
+```bash
+bun create @hzkjn/gene
+```
+
+This will prompt you to:
+1. Enter your app name
+2. Select the type of app you want to create
+
 ### Standard usage
 
 ```bash
@@ -19,7 +29,15 @@ bun create @hzkjn/gene my-app
 
 This will prompt you to select the type of app you want to create.
 
-### Power user mode (skip prompts)
+### Semi-interactive (template specified)
+
+```bash
+bun create @hzkjn/gene --template web
+```
+
+This will prompt only for the app name, using the specified template.
+
+### Power user mode (skip all prompts)
 
 ```bash
 bun create @hzkjn/gene my-app --template saas-workspaces
@@ -31,7 +49,7 @@ or
 bun create @hzkjn/gene my-app -t web
 ```
 
-Available templates include:
+### Available templates
 
 - `web`
 - `mobile`

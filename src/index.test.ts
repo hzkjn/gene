@@ -46,10 +46,9 @@ describe("Gene CLI", () => {
     return { exitCode, stdout, stderr };
   }
 
-  test("should fail without app name", async () => {
-    const { exitCode, stderr } = await runCLI([]);
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain("Please provide an app name");
+  test("should prompt for app name when not provided", async () => {
+    const { stdout } = await runCLI(["--template=web"], 1000);
+    expect(stdout).toContain("What is the name of your app?");
   });
 
   test("should fail if directory exists", async () => {
