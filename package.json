@@ -1,6 +1,6 @@
 {
   "name": "@hzkjn/create-gene",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "HZKJN app generator",
   "type": "module",
   "bin": {
