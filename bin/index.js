@@ -147,7 +147,6 @@ var require_src = __commonJS((exports, module) => {
 
 // src/index.ts
 var import_picocolors3 = __toESM(require_picocolors(), 1);
-import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
@@ -990,14 +989,7 @@ ${import_picocolors2.default.cyan(x2)}
 };
 var ze = `${import_picocolors2.default.gray(h)}  `;
 
-// src/index.ts
-var args = process.argv.slice(2);
-var appName = args[0];
-if (!appName) {
-  console.error(import_picocolors3.default.red("❌ Please provide an app name"));
-  process.exit(1);
-}
-var templateArg = args.find((a) => a.startsWith("--template="))?.split("=")[1] || args[args.indexOf("-t") + 1];
+// src/templates.ts
 var templates = [
   { value: "web", label: "Web App", hint: "Standard single-tenant web app" },
   { value: "mobile", label: "Mobile App", hint: "iOS / Android application" },
@@ -1016,6 +1008,24 @@ var templates = [
     hint: "Shopify / Jira-style SaaS"
   }
 ];
+
+// src/index.ts
+var args = process.argv.slice(2);
+var appName = args[0];
+if (!appName) {
+  console.error(import_picocolors3.default.red("❌ Please provide an app name"));
+  process.exit(1);
+}
+var templateArg = (() => {
+  const long = args.find((a) => a.startsWith("--template="));
+  if (long)
+    return long.split("=")[1];
+  const shortIndex = args.indexOf("-t");
+  if (shortIndex !== -1 && args[shortIndex + 1]) {
+    return args[shortIndex + 1];
+  }
+  return;
+})();
 async function main() {
   Nt(import_picocolors3.default.green("\uD83C\uDF31 Gene App Generator"));
   const template = templateArg ?? await qt({
@@ -1026,6 +1036,10 @@ async function main() {
     Pt("Operation cancelled.");
     process.exit(0);
   }
+  if (!templates.some((t2) => t2.value === template)) {
+    console.error(import_picocolors3.default.red(`❌ Unknown template "${template}"`));
+    process.exit(1);
+  }
   const targetDir = path.resolve(process.cwd(), appName);
   if (existsSync(targetDir)) {
     console.error(import_picocolors3.default.red(`❌ Directory "${appName}" already exists`));
@@ -1034,12 +1048,26 @@ async function main() {
   console.log(import_picocolors3.default.cyan(`
 Creating ${appName} using "${template}" template...
 `));
-  execSync(`git clone https://github.com/hzkjn/gene-core.git ${appName}/.gene-core`, {
-    stdio: "inherit"
-  });
-  execSync(`cp -R ${appName}/.gene-core/templates/${template}/* ${appName}`, { stdio: "inherit" });
-  execSync(`rm -rf ${appName}/.gene-core`, { stdio: "inherit" });
-  execSync(`cd ${appName} && git init`, { stdio: "inherit" });
+  await Bun.spawn(["git", "clone", "https://github.com/hzkjn/gene-core.git", `${appName}/.gene-core`], {
+    cwd: process.cwd(),
+    stdout: "inherit",
+    stderr: "inherit"
+  }).exited;
+  await Bun.spawn(["cp", "-R", `${appName}/.gene-core/templates/${template}/.`, appName], {
+    cwd: process.cwd(),
+    stdout: "inherit",
+    stderr: "inherit"
+  }).exited;
+  await Bun.spawn(["rm", "-rf", `${appName}/.gene-core`], {
+    cwd: process.cwd(),
+    stdout: "inherit",
+    stderr: "inherit"
+  }).exited;
+  await Bun.spawn(["git", "init"], {
+    cwd: path.join(process.cwd(), appName),
+    stdout: "inherit",
+    stderr: "inherit"
+  }).exited;
   Wt2(import_picocolors3.default.green("✅ App created successfully!"));
   console.log(`
 Next steps:

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
@@ -10,6 +9,7 @@ import {
   cancel,
   isCancel,
 } from "@clack/prompts";
+import { templates } from "./templates";
 
 const args = process.argv.slice(2);
 const appName = args[0];
@@ -19,28 +19,17 @@ if (!appName) {
   process.exit(1);
 }
 
-const templateArg =
-  args.find(a => a.startsWith("--template="))?.split("=")[1] ||
-  args[args.indexOf("-t") + 1];
+const templateArg = (() => {
+  const long = args.find(a => a.startsWith("--template="));
+  if (long) return long.split("=")[1];
 
-const templates = [
-  { value: "web", label: "Web App", hint: "Standard single-tenant web app" },
-  { value: "mobile", label: "Mobile App", hint: "iOS / Android application" },
-  { value: "browser-extension", label: "Browser Extension", hint: "Chrome / Firefox extension" },
-  { value: "api", label: "API Server", hint: "Backend service (REST / RPC)" },
-  { value: "cli", label: "CLI Tool", hint: "Command-line application" },
-  { value: "lib", label: "Library", hint: "Reusable package / SDK" },
-  {
-    value: "saas-workspaces",
-    label: "SaaS (Workspaces)",
-    hint: "Slack / GitHub-style multi-tenant app",
-  },
-  {
-    value: "saas-domains",
-    label: "SaaS (Custom Domains)",
-    hint: "Shopify / Jira-style SaaS",
-  },
-];
+  const shortIndex = args.indexOf("-t");
+  if (shortIndex !== -1 && args[shortIndex + 1]) {
+    return args[shortIndex + 1];
+  }
+
+  return undefined;
+})();
 
 async function main() {
   intro(pc.green("🌱 Gene App Generator"));
@@ -57,6 +46,11 @@ async function main() {
     process.exit(0);
   }
 
+  if (!templates.some(t => t.value === template)) {
+    console.error(pc.red(`❌ Unknown template "${template}"`));
+    process.exit(1);
+  }
+
   const targetDir = path.resolve(process.cwd(), appName!);
 
   if (existsSync(targetDir)) {
@@ -66,18 +60,29 @@ async function main() {
 
   console.log(pc.cyan(`\nCreating ${appName} using "${template}" template...\n`));
 
-  execSync(`git clone https://github.com/hzkjn/gene-core.git ${appName}/.gene-core`, {
-    stdio: "inherit",
-  });
+  await Bun.spawn(["git", "clone", "https://github.com/hzkjn/gene-core.git", `${appName}/.gene-core`], {
+    cwd: process.cwd(),
+    stdout: "inherit",
+    stderr: "inherit",
+  }).exited;
 
-  execSync(
-    `cp -R ${appName}/.gene-core/templates/${template}/* ${appName}`,
-    { stdio: "inherit" }
-  );
+  await Bun.spawn(["cp", "-R", `${appName}/.gene-core/templates/${template as string}/.`, appName!], {
+    cwd: process.cwd(),
+    stdout: "inherit",
+    stderr: "inherit",
+  }).exited;
 
-  execSync(`rm -rf ${appName}/.gene-core`, { stdio: "inherit" });
+  await Bun.spawn(["rm", "-rf", `${appName}/.gene-core`], {
+    cwd: process.cwd(),
+    stdout: "inherit",
+    stderr: "inherit",
+  }).exited;
 
-  execSync(`cd ${appName} && git init`, { stdio: "inherit" });
+  await Bun.spawn(["git", "init"], {
+    cwd: path.join(process.cwd(), appName!),
+    stdout: "inherit",
+    stderr: "inherit",
+  }).exited;
 
   outro(pc.green("✅ App created successfully!"));
 
